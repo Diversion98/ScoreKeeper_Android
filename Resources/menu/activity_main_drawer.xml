@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_7wonders"
+            android:title="Seven Wonders"/>
+		<item
+            android:id="@+id/nav_7wondersArchitect"
+            android:title="Seven Wonders Architects" />
+        <item
+            android:id="@+id/nav_franksZoo"
+            android:title="Frank's Zoo" />
+    </group>
+</menu>
