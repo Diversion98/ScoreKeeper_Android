@@ -1,4 +1,5 @@
 ﻿using Android.App;
+using Android.Content;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
@@ -21,7 +22,9 @@ namespace ScoreKeeper_Android.Activities
             base.OnCreate(savedInstanceState);
             SetContentView(Resource.Layout.playersSelectionActivity);
 
-            int currentNumberOfPlayers = minPlayers;
+            minPlayers = Intent.GetIntExtra("MinPlayers", 2);
+            maxPlayers = Intent.GetIntExtra("MaxPlayers", 8);
+            currentNumberOfPlayers = minPlayers;
 
             TextView playerCountTextView = FindViewById<TextView>(Resource.Id.playerCountTextView);
             TextView numberOfPlayersTextView = FindViewById<TextView>(Resource.Id.numberOfPlayersTextView);
@@ -58,11 +61,13 @@ namespace ScoreKeeper_Android.Activities
             while (playerNameEditTexts.Count < currentNumberOfPlayers)
             {
                 // Add new player name field
-                EditText playerNameEditText = new EditText(this);
-                playerNameEditText.Hint = $"Player {playerNameEditTexts.Count + 1}";
-                playerNameEditText.LayoutParameters = new ViewGroup.LayoutParams(
+                EditText playerNameEditText = new EditText(this)
+                {
+                    Hint = $"Player {playerNameEditTexts.Count + 1}",
+                    LayoutParameters = new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MatchParent,
-                    ViewGroup.LayoutParams.WrapContent);
+                    ViewGroup.LayoutParams.WrapContent)
+                };
 
                 playerNameEditTexts.Add(playerNameEditText);
                 playerNamesContainer.AddView(playerNameEditText);
@@ -71,7 +76,7 @@ namespace ScoreKeeper_Android.Activities
             while (playerNameEditTexts.Count > currentNumberOfPlayers)
             {
                 // Remove the latest player name field
-                EditText removedEditText = playerNameEditTexts[playerNameEditTexts.Count - 1];
+                EditText removedEditText = playerNameEditTexts[^1];
                 playerNameEditTexts.Remove(removedEditText);
                 playerNamesContainer.RemoveView(removedEditText);
             }
@@ -105,10 +110,38 @@ namespace ScoreKeeper_Android.Activities
             }
         }
 
+        [System.Obsolete]
+        public override void OnBackPressed()
+        {
+            // Override the back button behavior
+            Intent intent = new Intent(this, typeof(MainActivity));
+            StartActivity(intent);
+            Finish();
+        }
+
         private void StartGame()
         {
-            // TODO: Handle starting the game with the selected number of players and their names
-            // ...
+            // Check if all player names are filled in
+            List<string> playerNames = new List<string>();
+            foreach (var editText in playerNameEditTexts)
+            {
+                string playerName = editText.Text.Trim();
+                if (string.IsNullOrWhiteSpace(playerName))
+                {
+                    Toast.MakeText(this, "One or more player names are invalid. Please fill in all player names.", ToastLength.Short).Show();
+                    return;
+                }
+                playerNames.Add(playerName);
+            }
+
+            // Pass the selected number of players and their names back to the calling activity
+            Intent intent = new Intent();
+            intent.PutExtra("NumberOfPlayers", currentNumberOfPlayers);
+            intent.PutStringArrayListExtra("PlayerNames", playerNames);
+            SetResult(Result.Ok, intent);
+
+            // Finish the activity
+            Finish();
         }
     }
 }

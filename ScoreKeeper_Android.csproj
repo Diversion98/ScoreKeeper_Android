@@ -59,6 +59,7 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Activities\BaseGameActivity.cs" />
     <Compile Include="Activities\FranksZooActivity.cs" />
     <Compile Include="Activities\PlayersSelectionActivity.cs" />
     <Compile Include="Activities\SevenWondersActivity.cs" />
@@ -147,6 +148,9 @@
     <AndroidResource Include="Resources\layout\playersSelectionActivity.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\ic_arrow_forward.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
