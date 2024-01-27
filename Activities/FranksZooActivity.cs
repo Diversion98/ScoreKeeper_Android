@@ -7,8 +7,11 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
 using Google.Android.Material.FloatingActionButton;
+using Java.Lang.Reflect;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Android.InputMethodServices.Keyboard;
 
 namespace ScoreKeeper_Android.Activities
 {
@@ -18,10 +21,12 @@ namespace ScoreKeeper_Android.Activities
         private List<Spinner> hedgehogSpinners = new List<Spinner>();
         private List<Spinner> lionSpinners = new List<Spinner>();
         private List<Spinner> positionSpinners = new List<Spinner>();
-        private List<TextView> pointsTextViews = new List<TextView>();
         private List<int> positionValues = new List<int>();
         private List<int> hedgehogValues = new List<int>();
         private List<int> lionValues = new List<int>();
+
+        // Calculate the number of teams
+        int numberOfTeams;
 
         private int currentRound = 1; // Initialize the current round to 1
 
@@ -29,11 +34,12 @@ namespace ScoreKeeper_Android.Activities
         {
             base.OnActivityResult(requestCode, resultCode, data);
 
-            // Find the FAB button by its ID
+            // Find the FAB button by its ID and attach the click event handler
             var fabNextRound = FindViewById<FloatingActionButton>(Resource.Id.fabNextRound);
-
-            // Attach the click event handler
             fabNextRound.Click += NextRoundButton_Click;
+
+            // Calculate the number of teams
+            numberOfTeams = NumberOfPlayers / 2;
         }
 
         protected override int GetLayoutResourceId() { return Resource.Layout.franksZooActivity; }
@@ -42,27 +48,23 @@ namespace ScoreKeeper_Android.Activities
 
         protected override int GetMaxPlayers() { return 7; }
 
-        protected override void PopulateGameView(int numberOfPlayers, string[] playerNames)
+        protected override void PopulateGameView(int numberOfPlayers, List<Player> players)
         {
             // Access the TableLayout where you want to add rows dynamically
             TableLayout gameContainer = FindViewById<TableLayout>(Resource.Id.gameContainer);
 
             if (gameContainer != null)
             {
-                // Loop through each player and add a row dynamically
                 for (int i = 0; i < numberOfPlayers; i++)
                 {
                     // Create a new row layout (TableRow)
                     TableRow row = new TableRow(this)
                     {
-                        LayoutParameters = new TableLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MatchParent,
-                        ViewGroup.LayoutParams.WrapContent
-                    )
+                        LayoutParameters = new TableLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
                     };
 
-                    // Add TextView for Player
-                    AddTextView(row, playerNames[i], 1, GravityFlags.Center);
+                    // Add TextView for playerNames
+                    AddTextView(row, players[i].Name + players[i].Team, 1, GravityFlags.Start);
 
                     // Add Spinner for Player Position
                     Spinner positionSpinner = new Spinner(this);
@@ -74,7 +76,7 @@ namespace ScoreKeeper_Android.Activities
                     AddSpinner(row, hedgehogSpinner, lionSpinner);
 
                     // Add TextView for Points
-                    TextView pointsTextView = AddTextView(row, "0", 1f, GravityFlags.Center);
+                    TextView pointsTextView = AddTextView(row, players[i].Points.ToString(), 0.5f, GravityFlags.Center);
 
                     // Add the row to the game container
                     gameContainer.AddView(row);
@@ -82,9 +84,6 @@ namespace ScoreKeeper_Android.Activities
                     // Add the dynamically created spinners to the lists
                     hedgehogSpinners.Add(hedgehogSpinner);
                     lionSpinners.Add(lionSpinner);
-
-                    // Set the pointsTextView to the corresponding TextView in the row
-                    pointsTextViews.Add(pointsTextView);
                 }
             }
             else
@@ -92,10 +91,9 @@ namespace ScoreKeeper_Android.Activities
                 Toast.MakeText(this, "Error: gameContainer is null", ToastLength.Short).Show();
             }
         }
-
         private void AddSpinner(TableRow row, Spinner hedgehogSpinner, Spinner lionSpinner)
         {
-            if(currentRound == 1)
+            if (currentRound == 1)
             {
                 AddTextView(row, "/", 1f, GravityFlags.Center);
                 AddTextView(row, "/", 1f, GravityFlags.Center);
@@ -103,18 +101,12 @@ namespace ScoreKeeper_Android.Activities
             }
 
             // Set layout parameters for the Spinners
-            hedgehogSpinner.LayoutParameters = new TableRow.LayoutParams(
-                1,
-                TableRow.LayoutParams.WrapContent,
-                1)
+            hedgehogSpinner.LayoutParameters = new TableRow.LayoutParams(TableRow.LayoutParams.MatchParent, TableRow.LayoutParams.WrapContent, 1)
             {
                 Gravity = GravityFlags.Center // Center the content
             };
 
-            lionSpinner.LayoutParameters = new TableRow.LayoutParams(
-                1,
-                TableRow.LayoutParams.WrapContent,
-                1)
+            lionSpinner.LayoutParameters = new TableRow.LayoutParams(TableRow.LayoutParams.MatchParent, TableRow.LayoutParams.WrapContent, 1)
             {
                 Gravity = GravityFlags.Center // Center the content
             };
@@ -141,7 +133,7 @@ namespace ScoreKeeper_Android.Activities
         private void AddPositionSpinner(TableRow row, Spinner spinner, int numberOfPlayers, int playerIndex)
         {
             // Set layout parameters for the Spinner
-            TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(1, TableRow.LayoutParams.WrapContent, 0.5f)
+            TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(TableRow.LayoutParams.MatchParent, TableRow.LayoutParams.WrapContent, 0.5f)
             {
                 Gravity = GravityFlags.Center // Center the spinner horizontally and vertically
             };
@@ -196,7 +188,7 @@ namespace ScoreKeeper_Android.Activities
             }
 
             // Check if counts exceed the limit
-            if (totalHedgehogs + totalLions != 5)
+            if (totalHedgehogs != 5 || totalLions != 5)
             {
                 Toast.MakeText(this, "Total hedgehogs and/or lions together should equal to 5", ToastLength.Short).Show();
                 return false;
@@ -236,7 +228,36 @@ namespace ScoreKeeper_Android.Activities
             if (CheckPlayerPositions() && CheckAnimalCounts())
             {
                 CalculatePoints();
-                currentRound++;
+
+                // Check if at least two players have 19 or more points
+                int playersWith19OrMorePoints = Players.Count(player => player.Points >= 19);
+
+                if (playersWith19OrMorePoints < 2)
+                {
+                    // If not, create a new line across the view and make a new table
+                    TableLayout gameContainer = FindViewById<TableLayout>(Resource.Id.gameContainer);
+
+                    // Add a horizontal line to separate tables
+                    View line = new View(this);
+                    line.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(Resources.DisplayMetrics.Density * 1));
+                    line.SetBackgroundResource(Android.Resource.Color.DarkerGray);
+                    gameContainer.AddView(line);
+
+                    // Update player names with team numbers
+                    UpdatePlayerNamesWithTeams();
+
+                    //SortPlayersByPoints();
+
+                    currentRound++;
+
+                    // Create a new table for the next round
+                    PopulateGameView(NumberOfPlayers, Players);
+                }
+                else
+                {
+                    // Stop the game or take appropriate action
+                    Toast.MakeText(this, "Game Over! At least two players have 19 or more points.", ToastLength.Short).Show();
+                }
             }
             else
             {
@@ -246,42 +267,72 @@ namespace ScoreKeeper_Android.Activities
 
         private void CalculatePoints()
         {
-            // Calculate points for each player based on the described logic
+            List<TableRow> rows = new List<TableRow>();
+
             for (int i = 0; i < NumberOfPlayers; i++)
             {
                 int positionValue = positionValues[i];
-                int points = (positionValue == NumberOfPlayers) ? 0 : (NumberOfPlayers - (positionValue - 1));
+                int calculatedPoints = (positionValue == NumberOfPlayers) ? 0 : (NumberOfPlayers - (positionValue - 1));
+                int pointsFromAnimals = 0;
 
-                // Find the TableRow for the player
+                // Find the team members for the current player
+                var teamMembers = Players.Where(player => player.Team == Players[i].Team).ToList();
+
                 TableRow row = GetTableRowForSpinner(positionSpinners[i]);
 
-                // Update the TextViews in the row
-                if (row != null)
+                rows.Add(row);
+
+                // Remove spinners and add TextViews in their place
+                rows[i].RemoveViews(1, 4);
+                AddTextView(rows[i], positionValue.ToString(), 0.5f, GravityFlags.Center); // Add position TextView
+
+                if (currentRound != 1)
                 {
-                    UpdateTextViewInRow(row, 1, positionValue.ToString()); // Position TextView
+                    int HedgehogValue = hedgehogValues[i];
+                    int LionValue = lionValues[i];
 
-                    // Remove spinners and add TextViews in their place
-                    row.RemoveViews(1, 4); // Remove position spinner
-                    AddTextView(row, positionValue.ToString(), 1f, GravityFlags.Center); // Add position TextView
+                    UpdateTextViewInRow(rows[i], 2, hedgehogSpinners[i].SelectedItem.ToString()); // Hedgehogs TextView
+                    UpdateTextViewInRow(rows[i], 3, lionSpinners[i].SelectedItem.ToString()); // Lions TextView
 
-                    if (currentRound != 1)
+                    AddTextView(rows[i], HedgehogValue.ToString(), 1f, GravityFlags.Center); // Add hedgehog TextView
+                    AddTextView(rows[i], LionValue.ToString(), 1f, GravityFlags.Center); // Add lion TextView
+
+                    if (Players[i].Team == " (Alone)")
+                        calculatedPoints += 4;
+
+                    // Update points for all team members
+                    foreach (var member in teamMembers)
                     {
-                        int HedgehogValue = hedgehogValues[i];
-                        int lionValue = lionValues[i];
-
-                        UpdateTextViewInRow(row, 2, hedgehogSpinners[i].SelectedItem.ToString()); // Hedgehogs TextView
-                        UpdateTextViewInRow(row, 3, lionSpinners[i].SelectedItem.ToString()); // Lions TextView
-
-                        AddTextView(row, HedgehogValue.ToString(), 1f, GravityFlags.Center); // Add hedgehog TextView
-                        AddTextView(row, lionValue.ToString(), 1f, GravityFlags.Center); // Add lion TextView
-                    } else
-                    {
-                        AddTextView(row, "/", 1f, GravityFlags.Center); // Add hedgehog TextView
-                        AddTextView(row, "/", 1f, GravityFlags.Center); // Add lion TextView
+                        member.AddPoints(calculatedPoints);
                     }
 
+                    // Adjust points based on hedgehog and lion values
+                    pointsFromAnimals -= (HedgehogValue == 0) ? 1 : 0;
+                    pointsFromAnimals += (LionValue > 1) ? LionValue : 0;
+
+                    Players[i].AddPoints(pointsFromAnimals);
+
+                    Console.WriteLine(i + "players" + NumberOfPlayers);
+
+                    if (i == NumberOfPlayers - 1)
+                    {
+                        for (int j = 0; j < NumberOfPlayers; j++)
+                        {
+                            AddTextView(rows[j], Players[j].Points.ToString(), 0.5f, GravityFlags.Center);
+
+                            Players[j].ChangeInPoints();
+                        }
+                    }
+                }
+                else
+                {
+                    AddTextView(rows[i], "/", 1f, GravityFlags.Center); // Add hedgehog TextView
+                    AddTextView(rows[i], "/", 1f, GravityFlags.Center); // Add lion TextView
+
+                    Players[i].AddPoints(calculatedPoints);
+
                     // Set the points in the corresponding TextView
-                    AddTextView(row, points.ToString(), 1f, GravityFlags.Center);
+                    AddTextView(rows[i], Players[i].Points.ToString(), 0.5f, GravityFlags.Center);
                 }
             }
 
@@ -316,6 +367,50 @@ namespace ScoreKeeper_Android.Activities
                     break;
                 }
             }
+        }
+
+        private void UpdatePlayerNamesWithTeams()
+        {
+            // Sort players by points in descending order
+            var sortedPlayers = Players.OrderByDescending(player => player.Points)
+                           .ThenByDescending(player => player.ChangePoints)
+                           .ToList();
+
+            // Split players into two groups excluding the alone player if it's uneven
+            List<Player> group1 = sortedPlayers.Take(sortedPlayers.Count / 2).ToList();
+            List<Player> group2;
+
+            // Check if it's an uneven group of players
+            if (sortedPlayers.Count % 2 != 0)
+            {
+                // Find the middle player and make it the alone player
+                Player alonePlayer = sortedPlayers[sortedPlayers.Count / 2];
+                alonePlayer.ChangeTeam(" (Alone)");
+
+                group2 = sortedPlayers.Skip(sortedPlayers.Count / 2 + 1).ToList();
+            }
+            else
+            {
+                group2 = sortedPlayers.Skip(sortedPlayers.Count / 2).ToList();
+            }
+
+            // Assign players to teams using the two groups
+            for (int i = 0; i < numberOfTeams; i++)
+            {
+
+                group1[i].ChangeTeam($" (Team {i + 1})");
+                group2[i].ChangeTeam($" (Team {i + 1})");
+            }
+
+            UpdatePlayers(sortedPlayers);
+        }
+        private void SortPlayersByPoints()
+        {
+            // Sort players by points in descending order
+            List<Player> sortedPlayers = Players.OrderByDescending(player => player.Points).ToList();
+
+            // Update the Players list in the base class
+            UpdatePlayers(sortedPlayers);
         }
     }
 }

@@ -65,6 +65,7 @@
     <Compile Include="Activities\SevenWondersActivity.cs" />
     <Compile Include="Activities\SevenWondersArchitectsActivity.cs" />
     <Compile Include="MainActivity.cs" />
+    <Compile Include="Models\Player.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -151,9 +152,7 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\ic_arrow_forward.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Models\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
     Other similar extension points exist, see Microsoft.Common.targets.

@@ -11,10 +11,50 @@ using System.Linq;
 
 namespace ScoreKeeper_Android.Activities
 {
+    public class Player
+    {
+        public string Name { get; set; }
+        public string Alias { get; set; }
+        public string Team { get; set; }
+        public int Points { get; set; }
+        public int ChangePoints { get; set; }
+        public int PreviousPoints { get; set; }
+
+        public Player(string name, int points)
+        {
+            Name = name;
+            Alias = name;
+            Points = points;
+            PreviousPoints = points;
+            ChangePoints = 0;
+            Team = "";
+        }
+
+        public void ChangeAlias(string newAlias)
+        {
+            Alias = newAlias;
+        }
+
+        public void ChangeTeam(string newTeam)
+        {
+            Team = newTeam;
+        }
+
+        public void AddPoints(int newPoints)
+        {
+            Points += newPoints;
+        }
+
+        public void ChangeInPoints()
+        {
+            ChangePoints = Points - PreviousPoints;
+            PreviousPoints = Points;
+        }
+    }
     public abstract class BaseGameActivity : AppCompatActivity
     {
         protected int NumberOfPlayers { get; private set; }
-        protected string[] PlayerNames { get; private set; }
+        protected List<Player> Players { get; private set; } = new List<Player>();
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -41,16 +81,19 @@ namespace ScoreKeeper_Android.Activities
                 NumberOfPlayers = data.GetIntExtra("NumberOfPlayers", 3);
                 Toast.MakeText(this, $"Starting game for {NumberOfPlayers} players", ToastLength.Short).Show();
 
-                PlayerNames = data.GetStringArrayListExtra("PlayerNames").ToArray();
+                var playerNames = data.GetStringArrayListExtra("PlayerNames").ToArray();
+
+                // Initialize the Players list with Player instances
+                Players = playerNames.Select(name => new Player (name, 0)).ToList();
 
                 SetContentView(GetLayoutResourceId());
 
-                PopulateGameView(NumberOfPlayers, PlayerNames);
+                PopulateGameView(NumberOfPlayers, Players);
             }
         }
 
         protected abstract int GetLayoutResourceId();
-        protected abstract void PopulateGameView(int numberOfPlayers, string[] playerNames);
+        protected abstract void PopulateGameView(int numberOfPlayers, List<Player> players);
         protected abstract int GetMinPlayers();
         protected abstract int GetMaxPlayers();
         protected TextView AddTextView(TableRow row, string text, float weight, GravityFlags gravity)
@@ -70,6 +113,11 @@ namespace ScoreKeeper_Android.Activities
             row.AddView(textView);
 
             return textView; // Return the TextView instance
+        }
+
+        protected void UpdatePlayers(List<Player> updatedPlayers)
+        {
+            Players = updatedPlayers;
         }
     }
 }

@@ -25,16 +25,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Player"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:gravity="center" />
+            android:gravity="start" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:text="#"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:gravity="center" />
 
@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Egels"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:gravity="center" />
 
@@ -52,16 +52,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Leeuwen"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:gravity="center" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="0.5"
             android:text="Points"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:gravity="center" />
     </TableRow>
