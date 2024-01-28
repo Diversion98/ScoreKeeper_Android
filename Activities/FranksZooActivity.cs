@@ -8,6 +8,7 @@ using Android.Widget;
 using AndroidX.AppCompat.App;
 using Google.Android.Material.FloatingActionButton;
 using Java.Lang.Reflect;
+using ScoreKeeper_Android.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,8 +64,10 @@ namespace ScoreKeeper_Android.Activities
                         LayoutParameters = new TableLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
                     };
 
+                    Console.WriteLine(players[i].StartPlayer);
+
                     // Add TextView for playerNames
-                    AddTextView(row, players[i].Name + players[i].Team, 1, GravityFlags.Start);
+                    AddTextView(row, players[i].Name + players[i].Team + (players[i].StartPlayer ? " *" : ""), 1, GravityFlags.Start);
 
                     // Add Spinner for Player Position
                     Spinner positionSpinner = new Spinner(this);
@@ -91,6 +94,7 @@ namespace ScoreKeeper_Android.Activities
                 Toast.MakeText(this, "Error: gameContainer is null", ToastLength.Short).Show();
             }
         }
+
         private void AddSpinner(TableRow row, Spinner hedgehogSpinner, Spinner lionSpinner)
         {
             if (currentRound == 1)
@@ -312,8 +316,6 @@ namespace ScoreKeeper_Android.Activities
 
                     Players[i].AddPoints(pointsFromAnimals);
 
-                    Console.WriteLine(i + "players" + NumberOfPlayers);
-
                     if (i == NumberOfPlayers - 1)
                     {
                         for (int j = 0; j < NumberOfPlayers; j++)
@@ -402,14 +404,9 @@ namespace ScoreKeeper_Android.Activities
                 group2[i].ChangeTeam($" (Team {i + 1})");
             }
 
-            UpdatePlayers(sortedPlayers);
-        }
-        private void SortPlayersByPoints()
-        {
-            // Sort players by points in descending order
-            List<Player> sortedPlayers = Players.OrderByDescending(player => player.Points).ToList();
+            ClearStartPlayer();
+            sortedPlayers.Last().StartPlayer = true;
 
-            // Update the Players list in the base class
             UpdatePlayers(sortedPlayers);
         }
     }

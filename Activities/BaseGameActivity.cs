@@ -6,6 +6,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,6 +20,7 @@ namespace ScoreKeeper_Android.Activities
         public int Points { get; set; }
         public int ChangePoints { get; set; }
         public int PreviousPoints { get; set; }
+        public bool StartPlayer { get; set; }
 
         public Player(string name, int points)
         {
@@ -28,6 +30,7 @@ namespace ScoreKeeper_Android.Activities
             PreviousPoints = points;
             ChangePoints = 0;
             Team = "";
+            StartPlayer = false;
         }
 
         public void ChangeAlias(string newAlias)
@@ -84,9 +87,11 @@ namespace ScoreKeeper_Android.Activities
                 var playerNames = data.GetStringArrayListExtra("PlayerNames").ToArray();
 
                 // Initialize the Players list with Player instances
-                Players = playerNames.Select(name => new Player (name, 0)).ToList();
+                Players = playerNames.Select(name => new Player(name, 0)).ToList();
 
                 SetContentView(GetLayoutResourceId());
+
+                SelectStartPlayer();
 
                 PopulateGameView(NumberOfPlayers, Players);
             }
@@ -102,10 +107,7 @@ namespace ScoreKeeper_Android.Activities
             {
                 Text = text
             };
-            TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(
-                ViewGroup.LayoutParams.MatchParent,
-                ViewGroup.LayoutParams.WrapContent,
-                weight)
+            TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, weight)
             {
                 Gravity = gravity // Set the gravity
             };
@@ -118,6 +120,28 @@ namespace ScoreKeeper_Android.Activities
         protected void UpdatePlayers(List<Player> updatedPlayers)
         {
             Players = updatedPlayers;
+        }
+
+        protected void SelectStartPlayer()
+        {
+            if (Players != null && Players.Count > 0)
+            {
+                Random random = new Random();
+                int randomIndex = random.Next(Players.Count);
+
+                // Set the StartPlayer property for the randomly selected player
+                Players[randomIndex].StartPlayer = true;
+            }
+        }
+
+        protected void ClearStartPlayer()
+        {
+            // Find and clear the current start player
+            Player currentStartPlayer = Players.Find(player => player.StartPlayer);
+            if (currentStartPlayer != null)
+            {
+                currentStartPlayer.StartPlayer = false;
+            }
         }
     }
 }
