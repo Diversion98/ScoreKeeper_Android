@@ -321,8 +321,6 @@ namespace ScoreKeeper_Android.Activities
                         for (int j = 0; j < NumberOfPlayers; j++)
                         {
                             AddTextView(rows[j], Players[j].Points.ToString(), 0.5f, GravityFlags.Center);
-
-                            Players[j].ChangeInPoints();
                         }
                     }
                 }
@@ -336,6 +334,8 @@ namespace ScoreKeeper_Android.Activities
                     // Set the points in the corresponding TextView
                     AddTextView(rows[i], Players[i].Points.ToString(), 0.5f, GravityFlags.Center);
                 }
+
+                Players[i].ChangeInPoints();
             }
 
             // Clear the spinner lists
