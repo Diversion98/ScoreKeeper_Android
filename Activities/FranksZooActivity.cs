@@ -1,46 +1,49 @@
 ﻿using Android.App;
 using Android.Content;
-using Android.Nfc;
-using Android.OS;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
-using AndroidX.AppCompat.App;
 using Google.Android.Material.FloatingActionButton;
-using Java.Lang.Reflect;
-using ScoreKeeper_Android.Models;
+using Java.Lang;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Android.InputMethodServices.Keyboard;
+using System.Threading.Tasks;
+using AlertDialog = Android.App.AlertDialog;
 
 namespace ScoreKeeper_Android.Activities
 {
-    [Activity(Label = "FranksZooActivity")]
+    [Activity(Label = "Frank's Zoo Score Sheet")]
     public class FranksZooActivity : BaseGameActivity
     {
         private List<Spinner> hedgehogSpinners = new List<Spinner>();
         private List<Spinner> lionSpinners = new List<Spinner>();
         private List<Spinner> positionSpinners = new List<Spinner>();
-        private List<int> positionValues = new List<int>();
-        private List<int> hedgehogValues = new List<int>();
-        private List<int> lionValues = new List<int>();
+        private List<sbyte> positionValues = new List<sbyte>();
+        private List<sbyte> hedgehogValues = new List<sbyte>();
+        private List<sbyte> lionValues = new List<sbyte>();
 
         // Calculate the number of teams
-        int numberOfTeams;
+        byte numberOfTeams;
+        sbyte negativeLions = 0;
 
-        private int currentRound = 1; // Initialize the current round to 1
+        private Button finishGameButton;
+        private FloatingActionButton fabNextRound;
+
+        private byte currentRound = 1; // Initialize the current round to 1
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
 
             // Find the FAB button by its ID and attach the click event handler
-            var fabNextRound = FindViewById<FloatingActionButton>(Resource.Id.fabNextRound);
+            fabNextRound = FindViewById<FloatingActionButton>(Resource.Id.fabNextRound);
             fabNextRound.Click += NextRoundButton_Click;
 
+            finishGameButton = FindViewById<Button>(Resource.Id.finishGameButton);
+            finishGameButton.Click += (sender, e) => FinishGame("Frank's Zoo");
+
             // Calculate the number of teams
-            numberOfTeams = NumberOfPlayers / 2;
+            numberOfTeams = (byte)(NumberOfPlayers / 2);
         }
 
         protected override int GetLayoutResourceId() { return Resource.Layout.franksZooActivity; }
@@ -63,8 +66,6 @@ namespace ScoreKeeper_Android.Activities
                     {
                         LayoutParameters = new TableLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
                     };
-
-                    Console.WriteLine(players[i].StartPlayer);
 
                     // Add TextView for playerNames
                     AddTextView(row, players[i].Name + players[i].Team + (players[i].StartPlayer ? " *" : ""), 1, GravityFlags.Start);
@@ -163,27 +164,27 @@ namespace ScoreKeeper_Android.Activities
             positionSpinners.Add(spinner);
         }
 
-        private bool CheckAnimalCounts()
+        private async Task<bool> CheckAnimalCounts()
         {
             if (currentRound == 1) return true;
 
             // Initialize counts
-            int totalHedgehogs = 0;
-            int totalLions = 0;
+            sbyte totalHedgehogs = 0;
+            sbyte totalLions = 0;
 
             hedgehogValues.Clear();
             lionValues.Clear();
 
             // Loop through each player and update the counts
-            for (int i = 0; i < hedgehogSpinners.Count; i++)
+            for (sbyte i = 0; i < hedgehogSpinners.Count; i++)
             {
                 Spinner hedgehogSpinner = hedgehogSpinners[i];
                 Spinner lionSpinner = lionSpinners[i];
 
                 // Get the selected values from spinners
-                int selectedHedgehogs = int.Parse(hedgehogSpinner.SelectedItem.ToString());
+                sbyte selectedHedgehogs = sbyte.Parse(hedgehogSpinner.SelectedItem.ToString());
                 hedgehogValues.Add(selectedHedgehogs);
-                int selectedLions = int.Parse(lionSpinner.SelectedItem.ToString());
+                sbyte selectedLions = sbyte.Parse(lionSpinner.SelectedItem.ToString());
                 lionValues.Add(selectedLions);
 
                 // Update the counts
@@ -191,26 +192,67 @@ namespace ScoreKeeper_Android.Activities
                 totalLions += selectedLions;
             }
 
-            // Check if counts exceed the limit
-            if (totalHedgehogs != 5 || totalLions != 5)
+            if (totalLions > 5 || totalHedgehogs > 5)
             {
-                Toast.MakeText(this, "Total hedgehogs and/or lions together should equal to 5", ToastLength.Short).Show();
+                Toast.MakeText(this, "Lions and Hedgehogs can be max 5.", ToastLength.Short).Show();
                 return false;
             }
-            else
+
+            // Check if counts exceed the limit
+            if (totalLions != 5)
             {
-                return true;
+                // Show lion input dialog and wait for user input
+                bool result = await ShowLionsInputDialog();
+                if (!result)
+                {
+                    // User canceled the dialog
+                    return false;
+                }
             }
+
+            return true;
+        }
+
+        private Task<bool> ShowLionsInputDialog()
+        {
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.SetTitle("How many Lions does the last player have?");
+
+            EditText input = new EditText(this);
+            input.InputType = Android.Text.InputTypes.ClassNumber;
+            builder.SetView(input);
+
+            builder.SetPositiveButton("OK", (sender, e) =>
+            {
+                string inputText = input.Text;
+                if (sbyte.TryParse(inputText, out sbyte lions))
+                {
+                    negativeLions = lions;
+                    tcs.SetResult(true);
+                }
+            });
+
+            builder.SetNegativeButton("Cancel", (sender, e) =>
+            {
+                // Handle the cancellation
+                tcs.SetResult(false);
+            });
+
+            builder.Show();
+
+            return tcs.Task;
         }
 
         private bool CheckPlayerPositions()
         {
             // Get all the position spinner values
             positionValues.Clear();
-            for (int i = 0; i < positionSpinners.Count; i++)
+            for (sbyte i = 0; i < positionSpinners.Count; i++)
             {
                 Spinner positionSpinner = positionSpinners[i];
-                int selectedPosition = int.Parse(positionSpinner.SelectedItem.ToString());
+                sbyte selectedPosition = sbyte.Parse(positionSpinner.SelectedItem.ToString());
                 positionValues.Add(selectedPosition);
             }
 
@@ -227,9 +269,10 @@ namespace ScoreKeeper_Android.Activities
             return true;
         }
 
-        private void NextRoundButton_Click(object sender, System.EventArgs e)
+        private async void NextRoundButton_Click(object sender, System.EventArgs e)
         {
-            if (CheckPlayerPositions() && CheckAnimalCounts())
+            bool animalCountsResult = await CheckAnimalCounts();
+            if (CheckPlayerPositions() && animalCountsResult)
             {
                 CalculatePoints();
 
@@ -259,8 +302,13 @@ namespace ScoreKeeper_Android.Activities
                 }
                 else
                 {
-                    // Stop the game or take appropriate action
                     Toast.MakeText(this, "Game Over! At least two players have 19 or more points.", ToastLength.Short).Show();
+
+                    fabNextRound.Visibility = ViewStates.Gone;
+                    fabNextRound.Enabled = false;
+
+                    finishGameButton.Visibility = ViewStates.Visible;
+                    finishGameButton.Enabled = true;
                 }
             }
             else
@@ -273,11 +321,11 @@ namespace ScoreKeeper_Android.Activities
         {
             List<TableRow> rows = new List<TableRow>();
 
-            for (int i = 0; i < NumberOfPlayers; i++)
+            for (byte i = 0; i < NumberOfPlayers; i++)
             {
-                int positionValue = positionValues[i];
-                int calculatedPoints = (positionValue == NumberOfPlayers) ? 0 : (NumberOfPlayers - (positionValue - 1));
-                int pointsFromAnimals = 0;
+                sbyte positionValue = positionValues[i];
+                sbyte calculatedPoints = (sbyte)((positionValue == NumberOfPlayers) ? 0 : (NumberOfPlayers - (positionValue - 1)));
+                sbyte pointsFromAnimals = 0;
 
                 // Find the team members for the current player
                 var teamMembers = Players.Where(player => player.Team == Players[i].Team).ToList();
@@ -292,14 +340,25 @@ namespace ScoreKeeper_Android.Activities
 
                 if (currentRound != 1)
                 {
-                    int HedgehogValue = hedgehogValues[i];
-                    int LionValue = lionValues[i];
-
-                    UpdateTextViewInRow(rows[i], 2, hedgehogSpinners[i].SelectedItem.ToString()); // Hedgehogs TextView
-                    UpdateTextViewInRow(rows[i], 3, lionSpinners[i].SelectedItem.ToString()); // Lions TextView
+                    sbyte HedgehogValue = hedgehogValues[i];
+                    sbyte LionValue = lionValues[i];
 
                     AddTextView(rows[i], HedgehogValue.ToString(), 1f, GravityFlags.Center); // Add hedgehog TextView
-                    AddTextView(rows[i], LionValue.ToString(), 1f, GravityFlags.Center); // Add lion TextView
+
+                    if (positionValue == NumberOfPlayers)
+                    {
+                        if (negativeLions != 0)
+                        {
+                            AddTextView(rows[i], LionValue.ToString() + " - " + negativeLions, 1f, GravityFlags.Center); // Add lion TextView
+                        } else
+                        {
+                            AddTextView(rows[i], LionValue.ToString(), 1f, GravityFlags.Center); // Add lion TextView
+                        }
+                        pointsFromAnimals -= negativeLions;
+                    } else
+                    {
+                        AddTextView(rows[i], LionValue.ToString(), 1f, GravityFlags.Center); // Add lion TextView
+                    }
 
                     if (Players[i].Team == " (Alone)")
                         calculatedPoints += 4;
@@ -311,8 +370,8 @@ namespace ScoreKeeper_Android.Activities
                     }
 
                     // Adjust points based on hedgehog and lion values
-                    pointsFromAnimals -= (HedgehogValue == 0) ? 1 : 0;
-                    pointsFromAnimals += (LionValue > 1) ? LionValue : 0;
+                    pointsFromAnimals -= (sbyte)((HedgehogValue == 0) ? 1 : 0);
+                    pointsFromAnimals += (sbyte)((LionValue > 1) ? LionValue : 0);
 
                     Players[i].AddPoints(pointsFromAnimals);
 
@@ -342,6 +401,7 @@ namespace ScoreKeeper_Android.Activities
             positionSpinners.Clear();
             hedgehogSpinners.Clear();
             lionSpinners.Clear();
+            negativeLions = 0;
         }
 
         private TableRow GetTableRowForSpinner(Spinner spinner)

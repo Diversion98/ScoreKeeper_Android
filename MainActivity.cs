@@ -5,6 +5,7 @@ using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
+using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.DrawerLayout.Widget;
@@ -33,6 +34,16 @@ namespace ScoreKeeper_Android
 
             NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
             navigationView.SetNavigationItemSelectedListener(this);
+
+            Button scoreHistoryButton = FindViewById<Button>(Resource.Id.ScoreHistory);
+
+            // Set the click event handler
+            scoreHistoryButton.Click += (sender, e) =>
+            {
+                // Start GameHistoryActivity
+                var intent = new Intent(this, typeof(GameHistoryActivity));
+                StartActivity(intent);
+            };
         }
 
         [Obsolete]
@@ -99,4 +110,3 @@ namespace ScoreKeeper_Android
         }
     }
 }
-

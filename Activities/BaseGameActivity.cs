@@ -1,19 +1,26 @@
 ﻿using Android.App;
 using Android.Content;
+using Android.Content.Res;
 using Android.Nfc;
 using Android.OS;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
+using Java.Lang;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 
 namespace ScoreKeeper_Android.Activities
 {
     public class Player
     {
+        [PrimaryKey, AutoIncrement]
+        public int Id { get; set; }
+
         public string Name { get; set; }
         public string Alias { get; set; }
         public string Team { get; set; }
@@ -21,6 +28,14 @@ namespace ScoreKeeper_Android.Activities
         public int ChangePoints { get; set; }
         public int PreviousPoints { get; set; }
         public bool StartPlayer { get; set; }
+
+        // New property for linking to the game title
+        public string GameTitle { get; set; }
+
+        // Parameterless constructor required by SQLite
+        public Player()
+        {
+        }
 
         public Player(string name, int points)
         {
@@ -56,13 +71,16 @@ namespace ScoreKeeper_Android.Activities
     }
     public abstract class BaseGameActivity : AppCompatActivity
     {
+        protected DatabaseHelper dbHelper;
         protected int NumberOfPlayers { get; private set; }
         protected List<Player> Players { get; private set; } = new List<Player>();
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            SetTheme(Resource.Style.AppTheme);
             GetNumberOfPlayers(GetMinPlayers(), GetMaxPlayers());
+            dbHelper = new DatabaseHelper(this);
         }
 
         private void GetNumberOfPlayers(int minPlayers, int maxPlayers)
@@ -142,6 +160,39 @@ namespace ScoreKeeper_Android.Activities
             {
                 currentStartPlayer.StartPlayer = false;
             }
+        }
+
+        public override void OnBackPressed()
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.SetMessage("Are you sure you want to leave the game?");
+            builder.SetPositiveButton("Yes", (sender, args) =>
+            {
+                base.OnBackPressed(); // Proceed with back action
+            });
+            builder.SetNegativeButton("No", (sender, args) =>
+            {
+                // Do nothing, stay in the game
+            });
+            builder.Show();
+        }
+
+        protected void SaveGameResults(string activity, List<Player> players)
+        {
+            long gameId = dbHelper.AddGame(activity);
+
+            foreach (var player in players)
+            {
+                dbHelper.AddScore(dbHelper.GetPlayerIdByName(player.Name), gameId, player.Points);
+            }
+        }
+
+        protected void FinishGame(string activity)
+        {
+
+            SaveGameResults(activity, Players);
+
+            Finish();
         }
     }
 }

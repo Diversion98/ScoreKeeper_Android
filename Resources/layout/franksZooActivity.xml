@@ -93,9 +93,25 @@
             android:layout_marginBottom="16dp"
             android:layout_marginEnd="16dp"
             android:src="@drawable/ic_arrow_forward"
-            android:backgroundTint="@color/colorPrimaryButton"
+            android:backgroundTint="@color/dark_brown"
             app:borderWidth="0dp"
             app:elevation="6dp"
             app:fabSize="normal" />
+
+        <Button
+            android:id="@+id/finishGameButton"
+            android:layout_width="fill_parent"
+            android:layout_height="68dp"
+            android:text="Finish Game"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="9.6dp"
+            android:layout_marginEnd="16dp"
+            android:backgroundTint="@color/dark_brown"
+            android:textColor="@color/paper"
+            app:borderWidth="0dp"
+            app:elevation="6dp"
+            app:fabSize="normal"
+            android:visibility="gone"/>
     </RelativeLayout>
 </LinearLayout>

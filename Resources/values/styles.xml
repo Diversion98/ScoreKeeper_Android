@@ -1,20 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+	<!-- Base application theme -->
+	<style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+		<item name="colorPrimary">@color/dark_brown</item>
+		<item name="colorPrimaryDark">@color/dark_brown</item>
+		<item name="colorAccent">@color/light_brown</item>
+		<item name="android:windowBackground">@color/paper</item>
+		<item name="android:textColorPrimary">@color/text_color</item>
+	</style>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style>
+	<!-- NoActionBar theme -->
+	<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+		<item name="colorPrimary">@color/dark_brown</item>
+		<item name="colorPrimaryDark">@color/dark_brown</item>
+		<item name="colorAccent">@color/light_brown</item>
+		<item name="android:windowBackground">@color/paper</item>
+		<item name="android:textColorPrimary">@color/text_color</item>
+	</style>
 
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
+	<!-- TextView Style -->
+	<style name="TextViewStyle">
+		<item name="android:textColor">@color/text_color</item>
+		<item name="android:textSize">16sp</item>
+	</style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar" />
+	<!-- TextView Style for Headings -->
+	<style name="TextViewHeadingStyle">
+		<item name="android:textColor">@color/text_color</item>
+		<item name="android:textSize">18sp</item>
+		<item name="android:textStyle">bold</item>
+	</style>
 
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
-
+	<style name="AppTheme.AppBarOverlay" parent="AppTheme" />
+	<style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
